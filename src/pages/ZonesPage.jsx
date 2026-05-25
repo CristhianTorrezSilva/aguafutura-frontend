@@ -217,6 +217,7 @@ export default function ZonesPage() {
           emptyTitle="No hay zonas registradas todavia."
           emptyMessage="Comienza creando una zona operativa como ZN-NORTE o ZN-CENTRO."
           columns={[
+            { key: 'displayName', header: 'Zona', render: (row) => row.displayName || [row.code, row.name].filter(Boolean).join(' · ') },
             { key: 'code', header: 'Codigo' },
             { key: 'name', header: 'Nombre' },
             { key: 'description', header: 'Descripcion' },

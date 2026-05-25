@@ -14,17 +14,28 @@ export function normalizeApiError(error, fallback = 'No se pudo completar la ope
   }
 
   const message =
-    statusMessages[status] ||
     data?.message ||
     data?.detail ||
     data?.error ||
+    statusMessages[status] ||
     error?.message ||
     fallback;
+  const rawDetails = data?.details || data?.errors || data?.violations;
+  const detail = Array.isArray(rawDetails)
+    ? rawDetails
+      .map((item) => {
+        if (typeof item === 'string') return item;
+        const text = item.message || item.defaultMessage || item.reason || '';
+        return text || item.field ? `${item.field ? `${item.field}: ` : ''}${text}` : String(item);
+      })
+      .filter(Boolean)
+      .join(' | ')
+    : rawDetails || data?.detail;
 
   return {
     status,
     message,
-    detail: data?.detail && data.detail !== message ? data.detail : '',
+    detail: detail && detail !== message ? detail : '',
     correlationId: data?.correlationId || data?.traceId || data?.requestId || null,
   };
 }

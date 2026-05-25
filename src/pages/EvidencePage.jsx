@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { assetsApi, incidentsApi, workOrdersApi } from '../api/services';
+import { evidenceApi } from '../api/services';
 import EvidencePanel from '../components/EvidencePanel';
 import ErrorState from '../components/ErrorState';
 import FormField from '../components/FormField';
 import LoadingState from '../components/LoadingState';
 import PageHeader from '../components/PageHeader';
 import { apiErrorMessage } from '../utils/errors';
-import { assetLabel, incidentLabel, workOrderLabel } from '../utils/display';
 import { asArray } from '../utils/format';
 
 const referenceTypes = [
@@ -15,10 +14,8 @@ const referenceTypes = [
   { value: 'WORK_ORDER', label: 'Orden de trabajo' },
 ];
 
-function labelFor(type, item) {
-  if (type === 'ASSET') return assetLabel(item);
-  if (type === 'INCIDENT') return incidentLabel(item);
-  return workOrderLabel(item);
+function labelFor(item) {
+  return item?.displayName || item?.label || item?.name || item?.title || item?.code || item?.id || '-';
 }
 
 export default function EvidencePage() {
@@ -35,11 +32,7 @@ export default function EvidencePage() {
       setError('');
       setReference((current) => ({ ...current, referenceId: '' }));
       try {
-        const response = reference.referenceType === 'ASSET'
-          ? await assetsApi.list()
-          : reference.referenceType === 'INCIDENT'
-            ? await incidentsApi.list()
-            : await workOrdersApi.list();
+        const response = await evidenceApi.referenceOptions(reference.referenceType);
         if (active) {
           setOptions(asArray(response.data));
         }
@@ -89,7 +82,7 @@ export default function EvidencePage() {
               disabled={loadingOptions}
             >
               <option value="">{loadingOptions ? 'Cargando opciones...' : 'Seleccionar elemento relacionado'}</option>
-              {options.map((item) => <option key={item.id} value={item.id}>{labelFor(reference.referenceType, item)}</option>)}
+              {options.map((item) => <option key={item.id || item.value} value={item.id || item.value}>{labelFor(item)}</option>)}
             </select>
           </FormField>
         </div>
@@ -100,7 +93,7 @@ export default function EvidencePage() {
         <EvidencePanel
           referenceType={reference.referenceType}
           referenceId={reference.referenceId}
-          referenceLabel={labelFor(reference.referenceType, selectedOption)}
+          referenceLabel={labelFor(selectedOption)}
         />
       )}
     </div>

@@ -84,17 +84,18 @@ export default function EvidencePanel({ referenceType, referenceId, referenceLab
   }
 
   async function downloadEvidence(row) {
-    if (!row.url) {
-      setError({ message: 'La evidencia no tiene URL de descarga devuelta por backend.' });
+    const evidenceId = row.id || row.evidenceId;
+    if (!evidenceId) {
+      setError({ message: 'La evidencia no tiene ID de descarga.' });
       return;
     }
 
     try {
-      const response = await evidenceApi.download(row.url);
+      const response = await evidenceApi.download(evidenceId);
       const blobUrl = window.URL.createObjectURL(response.data);
       const link = document.createElement('a');
       link.href = blobUrl;
-      link.download = row.fileName || row.filename || `evidence-${row.id || 'file'}`;
+      link.download = row.fileName || row.filename || `evidence-${evidenceId}`;
       document.body.appendChild(link);
       link.click();
       link.remove();

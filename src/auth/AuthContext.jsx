@@ -16,8 +16,8 @@ const readStoredAuth = () => ({
 });
 
 function persistAuth({ accessToken, tokenType, userId, tenantId, tenantName, tenantShortId, roles }) {
-  localStorage.setItem('accessToken', accessToken || '');
-  localStorage.setItem('tokenType', tokenType || 'Bearer');
+  localStorage.setItem('accessToken', String(accessToken || '').replace(/^Bearer\s+/i, ''));
+  localStorage.setItem('tokenType', 'Bearer');
   localStorage.setItem('userId', userId || '');
   localStorage.setItem('tenantId', tenantId || '');
   localStorage.setItem('tenantName', tenantName || '');

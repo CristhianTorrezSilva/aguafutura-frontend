@@ -4,6 +4,11 @@ export const tenantsApi = {
   list: () => api.get('/api/v1/tenants'),
 };
 
+export const coreApi = {
+  health: () => api.get('/api/v1/health'),
+  ping: () => api.get('/api/v1/ping'),
+};
+
 export const authApi = {
   login: (payload) => api.post('/api/v1/auth/login', payload),
   register: (payload) => api.post('/api/v1/auth/register', payload),
@@ -24,21 +29,28 @@ export const zonesApi = {
 export const assetsApi = {
   list: () => api.get('/api/v1/assets'),
   create: (payload) => api.post('/api/v1/assets', payload),
+  update: (assetId, payload) => api.patch(`/api/v1/assets/${assetId}`, payload),
+  remove: (assetId) => api.delete(`/api/v1/assets/${assetId}`),
 };
 
 export const consumptionsApi = {
   byAsset: (assetId) => api.get(`/api/v1/consumptions/asset/${assetId}`),
   create: (payload) => api.post('/api/v1/consumptions', payload),
+  update: (consumptionId, payload) => api.patch(`/api/v1/consumptions/${consumptionId}`, payload),
 };
 
 export const incidentsApi = {
   list: () => api.get('/api/v1/incidents'),
   create: (payload) => api.post('/api/v1/incidents', payload),
+  update: (incidentId, payload) => api.patch(`/api/v1/incidents/${incidentId}`, payload),
+  remove: (incidentId) => api.delete(`/api/v1/incidents/${incidentId}`),
 };
 
 export const workOrdersApi = {
   list: () => api.get('/api/v1/work-orders'),
   create: (payload) => api.post('/api/v1/work-orders', payload),
+  update: (workOrderId, payload) => api.patch(`/api/v1/work-orders/${workOrderId}`, payload),
+  remove: (workOrderId) => api.delete(`/api/v1/work-orders/${workOrderId}`),
 };
 
 export const evidenceApi = {
@@ -48,8 +60,9 @@ export const evidenceApi = {
     }),
   list: (referenceType, referenceId) =>
     api.get(`/api/v1/evidence/${referenceType}/${referenceId}`),
-  download: (url) =>
-    api.get(url, {
+  referenceOptions: (type) => api.get('/api/v1/evidence/reference-options', { params: { type } }),
+  download: (evidenceId) =>
+    api.get(`/api/v1/evidence/download/${evidenceId}`, {
       responseType: 'blob',
     }),
 };
