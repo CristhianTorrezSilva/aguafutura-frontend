@@ -44,6 +44,13 @@ function buildZonePayload(form, originalZone) {
   return payload;
 }
 
+function buildZoneCreatePayload(form) {
+  return {
+    code: form.code.trim(),
+    name: form.name.trim(),
+  };
+}
+
 function zoneToForm(zone) {
   return {
     code: zone.code || '',
@@ -132,7 +139,7 @@ export default function ZonesPage() {
     setSubmitError(null);
     setNotice('');
     try {
-      await zonesApi.create(buildZonePayload(form));
+      await zonesApi.create(buildZoneCreatePayload(form));
       setForm(emptyForm);
       setNotice('Zona creada correctamente.');
       await reload();

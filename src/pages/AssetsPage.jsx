@@ -14,18 +14,45 @@ import { zoneLabel } from '../utils/display';
 import { asArray, formatDate } from '../utils/format';
 import { ASSET_TYPES } from '../utils/enums';
 
+const emptyAssetForm = {
+  zoneId: '',
+  code: '',
+  name: '',
+  type: 'METER',
+  locationDescription: '',
+};
+
+function normalizeAssetCode(value) {
+  return value.toUpperCase().replace(/\s+/g, '').replace(/[^A-Z0-9_-]/g, '');
+}
+
+function validateAsset(form, zoneRows) {
+  if (!form.zoneId) return 'Selecciona una zona real antes de crear el activo.';
+  if (!zoneRows.some((zone) => zone.id === form.zoneId)) return 'La zona seleccionada no existe o no termino de cargar.';
+  if (!form.code.trim()) return 'Ingresa un codigo de activo. Ejemplo: AST-001.';
+  if (!form.name.trim()) return 'Ingresa un nombre de activo.';
+  if (!form.type) return 'Selecciona un tipo de activo.';
+  if (!ASSET_TYPES.includes(form.type)) return 'Selecciona un tipo de activo valido.';
+  if (!form.locationDescription.trim()) return 'Ingresa una ubicacion o referencia del activo.';
+  return '';
+}
+
+function buildAssetPayload(form) {
+  return {
+    zoneId: form.zoneId,
+    code: form.code.trim(),
+    name: form.name.trim(),
+    type: form.type,
+    locationDescription: form.locationDescription.trim(),
+  };
+}
+
 export default function AssetsPage() {
   const assets = useAsync(() => assetsApi.list(), []);
   const zones = useAsync(() => zonesApi.list(), []);
   const { can } = useRoles();
   const canCreate = can(PERMISSIONS.assetsCreate);
-  const [form, setForm] = useState({
-    zoneId: '',
-    code: '',
-    name: '',
-    type: 'METER',
-    locationDescription: '',
-  });
+  const [form, setForm] = useState(emptyAssetForm);
   const [saving, setSaving] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const rows = asArray(assets.data);
@@ -34,11 +61,17 @@ export default function AssetsPage() {
 
   async function handleSubmit(event) {
     event.preventDefault();
+    const validationError = validateAsset(form, zoneRows);
+    if (validationError) {
+      setSubmitError(validationError);
+      return;
+    }
+
     setSaving(true);
     setSubmitError('');
     try {
-      await assetsApi.create(form);
-      setForm({ zoneId: '', code: '', name: '', type: 'METER', locationDescription: '' });
+      await assetsApi.create(buildAssetPayload(form));
+      setForm(emptyAssetForm);
       await assets.reload();
     } catch (err) {
       setSubmitError(apiErrorMessage(err, 'No se pudo crear el activo'));
@@ -61,13 +94,19 @@ export default function AssetsPage() {
             </select>
           </FormField>
           <FormField label="Codigo">
-            <input value={form.code} onChange={(event) => setForm({ ...form, code: event.target.value })} placeholder="MTR-001" required />
+            <input
+              value={form.code}
+              maxLength={30}
+              onChange={(event) => setForm({ ...form, code: normalizeAssetCode(event.target.value) })}
+              placeholder="AST-001"
+              required
+            />
           </FormField>
           <FormField label="Nombre">
             <input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="Medidor principal" required />
           </FormField>
           <FormField label="Tipo">
-            <select value={form.type} onChange={(event) => setForm({ ...form, type: event.target.value })}>
+            <select value={form.type} onChange={(event) => setForm({ ...form, type: event.target.value })} required>
               {ASSET_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}
             </select>
           </FormField>
@@ -76,7 +115,10 @@ export default function AssetsPage() {
           </FormField>
         </div>
         <div className="actions">
-          <button className="button" type="submit" disabled={saving}>{saving ? 'Guardando...' : 'Crear activo'}</button>
+          <button className="button" type="submit" disabled={saving || zones.loading || !zoneRows.length}>
+            {saving ? 'Guardando...' : 'Crear activo'}
+          </button>
+          {!zones.loading && !zoneRows.length && <span className="form-note">Crea una zona antes de registrar activos.</span>}
         </div>
       </form>}
 
