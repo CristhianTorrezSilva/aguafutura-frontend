@@ -3,7 +3,9 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { tenantsApi } from '../api/services';
 import { useAuth } from '../auth/AuthContext';
 import FormField from '../components/FormField';
+import ErrorState from '../components/ErrorState';
 import { asArray } from '../utils/format';
+import { apiErrorMessage } from '../utils/errors';
 import { REGISTER_ROLES } from '../utils/enums';
 
 export default function LoginPage() {
@@ -19,6 +21,7 @@ export default function LoginPage() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [tenantsError, setTenantsError] = useState('');
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -32,7 +35,7 @@ export default function LoginPage() {
           setForm((current) => ({ ...current, tenantId: current.tenantId || list[0].id }));
         }
       })
-      .catch((err) => setError(err.response?.data?.message || err.message || 'No se pudieron cargar tenants'));
+      .catch((err) => setTenantsError(apiErrorMessage(err, 'No se pudieron cargar tenants')));
   }, []);
 
   if (isAuthenticated) {
@@ -51,7 +54,7 @@ export default function LoginPage() {
       }
       navigate(location.state?.from?.pathname || '/', { replace: true });
     } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Login fallido');
+      setError(apiErrorMessage(err, 'Login fallido'));
     } finally {
       setLoading(false);
     }
@@ -61,7 +64,7 @@ export default function LoginPage() {
     <div className="auth-shell">
       <form className="auth-card" onSubmit={handleSubmit}>
         <h1>AguaFutura AI</h1>
-        <p>Ingresa con un tenant y credenciales validas.</p>
+        <p>Consola segura para operacion hidrica, evidencia e inteligencia operacional.</p>
 
         <div className="tabs">
           <button className={mode === 'login' ? 'tab active' : 'tab'} type="button" onClick={() => setMode('login')}>
@@ -72,26 +75,36 @@ export default function LoginPage() {
           </button>
         </div>
 
-        {error && <div className="error">{error}</div>}
+        {tenantsError && <ErrorState message={tenantsError} detail="Puedes ingresar el tenant manualmente mientras el catalogo no este disponible." />}
+        {error && <ErrorState message={error} />}
 
         <div className="form-grid">
-          <FormField label="Tenant">
-            <select
-              value={form.tenantId}
-              onChange={(event) => setForm({ ...form, tenantId: event.target.value })}
-              required
-            >
-              <option value="">Seleccionar tenant</option>
-              {tenants.map((tenant) => (
-                <option key={tenant.id} value={tenant.id}>
-                  {tenant.name} ({tenant.code})
-                </option>
-              ))}
-            </select>
+          <FormField label="Tenant" help="Se usa solo para login/register; luego el backend resuelve el tenant desde el JWT.">
+            {tenants.length ? (
+              <select
+                value={form.tenantId}
+                onChange={(event) => setForm({ ...form, tenantId: event.target.value })}
+                required
+              >
+                <option value="">Seleccionar tenant</option>
+                {tenants.map((tenant) => (
+                  <option key={tenant.id} value={tenant.id}>
+                    {tenant.name} ({tenant.code})
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                value={form.tenantId}
+                onChange={(event) => setForm({ ...form, tenantId: event.target.value })}
+                placeholder="tenant uuid"
+                required
+              />
+            )}
           </FormField>
 
           {mode === 'register' && (
-            <FormField label="Full name">
+            <FormField label="Nombre completo">
               <input
                 value={form.fullName}
                 onChange={(event) => setForm({ ...form, fullName: event.target.value })}
@@ -100,7 +113,7 @@ export default function LoginPage() {
             </FormField>
           )}
 
-          <FormField label="Email">
+          <FormField label="Correo">
             <input
               type="email"
               value={form.email}
@@ -109,7 +122,7 @@ export default function LoginPage() {
             />
           </FormField>
 
-          <FormField label="Password">
+          <FormField label="Contrasena">
             <input
               type="password"
               value={form.password}
@@ -119,7 +132,7 @@ export default function LoginPage() {
           </FormField>
 
           {mode === 'register' && (
-            <FormField label="Role">
+            <FormField label="Rol">
               <select value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value })}>
                 {REGISTER_ROLES.map((role) => <option key={role} value={role}>{role}</option>)}
               </select>
@@ -129,7 +142,7 @@ export default function LoginPage() {
 
         <div className="actions">
           <button className="button" type="submit" disabled={loading}>
-            {loading ? 'Procesando...' : mode === 'login' ? 'Ingresar' : 'Registrar'}
+            {loading ? 'Procesando...' : mode === 'login' ? 'Ingresar' : 'Crear cuenta'}
           </button>
         </div>
       </form>

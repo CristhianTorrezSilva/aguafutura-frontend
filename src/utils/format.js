@@ -4,7 +4,12 @@ export function formatDate(value) {
   }
 
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
+  return Number.isNaN(date.getTime())
+    ? value
+    : new Intl.DateTimeFormat('es-BO', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      }).format(date);
 }
 
 export function valueOrDash(value) {

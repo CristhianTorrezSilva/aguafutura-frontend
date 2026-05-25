@@ -2,27 +2,29 @@ import { NavLink } from 'react-router-dom';
 import { PERMISSIONS } from '../auth/permissions';
 import { useAuth } from '../auth/AuthContext';
 import { useRoles } from '../hooks/useRoles';
+import { tenantLabel } from '../utils/display';
 
 const navItems = [
-  { to: '/', label: 'Dashboard', roles: PERMISSIONS.dashboardRead },
+  { to: '/', label: 'Centro operativo', roles: PERMISSIONS.dashboardRead },
   { to: '/zones', label: 'Zonas', roles: PERMISSIONS.zonesRead },
-  { to: '/assets', label: 'Activos', roles: PERMISSIONS.assetsRead },
-  { to: '/incidents', label: 'Incidentes', roles: PERMISSIONS.incidentsRead },
-  { to: '/work-orders', label: 'Ordenes', roles: PERMISSIONS.workOrdersRead },
+  { to: '/assets', label: 'Activos hidricos', roles: PERMISSIONS.assetsRead },
+  { to: '/incidents', label: 'Incidencias', roles: PERMISSIONS.incidentsRead },
+  { to: '/work-orders', label: 'Ordenes de trabajo', roles: PERMISSIONS.workOrdersRead },
   { to: '/evidence', label: 'Evidencia', roles: PERMISSIONS.evidenceRead },
-  { to: '/ai-suggestions', label: 'AI Suggestions', roles: PERMISSIONS.aiUse },
+  { to: '/ai-suggestions', label: 'Asistente IA', roles: PERMISSIONS.aiUse },
   { to: '/profile', label: 'Perfil' },
 ];
 
 export default function Sidebar() {
-  const { roles, tenantId } = useAuth();
+  const { roles, tenantId, tenantName, tenantShortId } = useAuth();
   const { can } = useRoles();
+  const tenant = tenantLabel({ tenantName, tenantShortId, tenantId });
 
   return (
     <aside className="sidebar">
       <div className="brand">
         <strong>AguaFutura AI</strong>
-        <span>Operacion hidrica</span>
+        <span>Operacion hidrica multi-tenant</span>
       </div>
 
       <nav className="nav-list">
@@ -34,7 +36,7 @@ export default function Sidebar() {
       </nav>
 
       <div className="sidebar-footer">
-        <span>Tenant: {tenantId || '-'}</span>
+        <span title={tenantId || undefined}>Tenant: {tenant}</span>
         <span>Roles: {roles.join(', ') || '-'}</span>
       </div>
     </aside>

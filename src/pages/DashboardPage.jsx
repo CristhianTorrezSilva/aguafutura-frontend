@@ -1,24 +1,31 @@
 import { analyticsApi } from '../api/services';
+import EmptyState from '../components/EmptyState';
+import ErrorState from '../components/ErrorState';
+import LoadingState from '../components/LoadingState';
 import PageHeader from '../components/PageHeader';
 import { useAsync } from '../hooks/useAsync';
 
 function Breakdown({ title, data }) {
   const entries = Object.entries(data || {});
+  const max = Math.max(...entries.map(([, value]) => Number(value) || 0), 0);
 
   return (
     <div className="panel">
       <h2 className="section-title">{title}</h2>
       {entries.length ? (
-        <div className="detail-list">
+        <div className="breakdown-list">
           {entries.map(([key, value]) => (
-            <div key={key}>
-              <dt>{key}</dt>
-              <dd>{value}</dd>
+            <div className="breakdown-row" key={key}>
+              <strong>{key}</strong>
+              <div className="breakdown-bar">
+                <span style={{ width: `${max ? ((Number(value) || 0) / max) * 100 : 0}%` }} />
+              </div>
+              <span className="badge">{value}</span>
             </div>
           ))}
         </div>
       ) : (
-        <div className="empty">Sin datos</div>
+        <EmptyState message="El backend aun no devuelve datos para este desglose." />
       )}
     </div>
   );
@@ -27,19 +34,29 @@ function Breakdown({ title, data }) {
 export default function DashboardPage() {
   const { data, loading, error } = useAsync(() => analyticsApi.dashboard(), []);
 
-  if (loading) return <div className="page"><div className="loading">Cargando dashboard...</div></div>;
+  if (loading) return <div className="page"><LoadingState message="Cargando centro operativo..." /></div>;
 
   return (
     <div className="page">
-      <PageHeader title="Dashboard" description="Resumen operativo de AguaFutura AI." />
-      {error && <div className="error">{error}</div>}
+      <PageHeader
+        eyebrow="Operaciones"
+        badge="Live"
+        title="Centro operativo hidrico"
+        description="Resumen ejecutivo de infraestructura, consumo, incidencias, ordenes y evidencia operacional."
+      />
+      {error && <ErrorState message={error} />}
+
+      <section className="command-hero">
+        <h2>Vista municipal unificada</h2>
+        <p>Monitorea activos, respuesta operativa e inteligencia aplicada desde una sola consola conectada al backend real.</p>
+      </section>
 
       <div className="grid">
-        <div className="metric-card"><span>Total assets</span><strong>{data?.totalAssets ?? 0}</strong></div>
-        <div className="metric-card"><span>Consumo total</span><strong>{data?.totalConsumptionVolume ?? 0}</strong></div>
-        <div className="metric-card"><span>Incidentes</span><strong>{data?.totalIncidents ?? 0}</strong></div>
-        <div className="metric-card"><span>Ordenes</span><strong>{data?.totalWorkOrders ?? 0}</strong></div>
-        <div className="metric-card"><span>Evidencias</span><strong>{data?.totalEvidence ?? 0}</strong></div>
+        <div className="metric-card"><span>Activos</span><strong>{data?.totalAssets ?? 0}</strong><small>Infraestructura registrada</small></div>
+        <div className="metric-card"><span>Consumo total</span><strong>{data?.totalConsumptionVolume ?? 0}</strong><small>Volumen consolidado</small></div>
+        <div className="metric-card"><span>Incidencias</span><strong>{data?.totalIncidents ?? 0}</strong><small>Eventos operativos</small></div>
+        <div className="metric-card"><span>Ordenes</span><strong>{data?.totalWorkOrders ?? 0}</strong><small>Trabajo planificado</small></div>
+        <div className="metric-card"><span>Evidencias</span><strong>{data?.totalEvidence ?? 0}</strong><small>Archivos trazables</small></div>
       </div>
 
       <div className="grid">

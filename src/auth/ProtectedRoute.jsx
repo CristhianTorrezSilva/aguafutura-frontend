@@ -6,7 +6,7 @@ export default function ProtectedRoute() {
   const location = useLocation();
 
   if (loading) {
-    return <div className="loading">Cargando sesión...</div>;
+    return <div className="auth-shell"><div className="loading state-card">Cargando sesion...</div></div>;
   }
 
   if (!isAuthenticated) {

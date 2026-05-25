@@ -10,14 +10,18 @@ const readStoredAuth = () => ({
   tokenType: localStorage.getItem('tokenType') || 'Bearer',
   userId: localStorage.getItem('userId'),
   tenantId: localStorage.getItem('tenantId'),
+  tenantName: localStorage.getItem('tenantName'),
+  tenantShortId: localStorage.getItem('tenantShortId'),
   roles: normalizeRoles(localStorage.getItem('roles')),
 });
 
-function persistAuth({ accessToken, tokenType, userId, tenantId, roles }) {
+function persistAuth({ accessToken, tokenType, userId, tenantId, tenantName, tenantShortId, roles }) {
   localStorage.setItem('accessToken', accessToken || '');
   localStorage.setItem('tokenType', tokenType || 'Bearer');
   localStorage.setItem('userId', userId || '');
   localStorage.setItem('tenantId', tenantId || '');
+  localStorage.setItem('tenantName', tenantName || '');
+  localStorage.setItem('tenantShortId', tenantShortId || '');
   localStorage.setItem('roles', JSON.stringify(normalizeRoles(roles)));
 }
 
@@ -26,6 +30,8 @@ function clearAuthStorage() {
   localStorage.removeItem('tokenType');
   localStorage.removeItem('userId');
   localStorage.removeItem('tenantId');
+  localStorage.removeItem('tenantName');
+  localStorage.removeItem('tenantShortId');
   localStorage.removeItem('roles');
 }
 
@@ -36,7 +42,7 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback(() => {
     clearAuthStorage();
-    setAuth({ accessToken: null, tokenType: 'Bearer', userId: null, tenantId: null, roles: [] });
+    setAuth({ accessToken: null, tokenType: 'Bearer', userId: null, tenantId: null, tenantName: null, tenantShortId: null, roles: [] });
     navigate('/login', { replace: true });
   }, [navigate]);
 
@@ -48,6 +54,8 @@ export function AuthProvider({ children }) {
       tokenType: localStorage.getItem('tokenType') || 'Bearer',
       userId: profile.userId || profile.id || localStorage.getItem('userId'),
       tenantId: profile.tenantId || localStorage.getItem('tenantId'),
+      tenantName: profile.tenantName || profile.tenant?.name || localStorage.getItem('tenantName'),
+      tenantShortId: profile.tenantShortId || profile.tenant?.shortId || localStorage.getItem('tenantShortId'),
       roles: normalizeRoles(profile.roles || localStorage.getItem('roles')),
     };
 
@@ -63,11 +71,17 @@ export function AuthProvider({ children }) {
       const token = data.accessToken || data.token;
       const tokenType = data.tokenType || 'Bearer';
 
+      if (!token) {
+        throw new Error('El backend no devolvio accessToken');
+      }
+
       persistAuth({
         accessToken: token,
         tokenType,
         userId: data.userId,
         tenantId: data.tenantId || tenantId,
+        tenantName: data.tenantName || data.tenant?.name,
+        tenantShortId: data.tenantShortId || data.tenant?.shortId,
         roles: normalizeRoles(data.roles),
       });
 
@@ -84,11 +98,17 @@ export function AuthProvider({ children }) {
       const token = data.accessToken || data.token;
       const tokenType = data.tokenType || 'Bearer';
 
+      if (!token) {
+        throw new Error('El backend no devolvio accessToken');
+      }
+
       persistAuth({
         accessToken: token,
         tokenType,
         userId: data.userId,
         tenantId: data.tenantId || tenantId,
+        tenantName: data.tenantName || data.tenant?.name,
+        tenantShortId: data.tenantShortId || data.tenant?.shortId,
         roles: normalizeRoles(data.roles),
       });
 
@@ -112,7 +132,7 @@ export function AuthProvider({ children }) {
       } catch {
         clearAuthStorage();
         if (active) {
-          setAuth({ accessToken: null, tokenType: 'Bearer', userId: null, tenantId: null, roles: [] });
+          setAuth({ accessToken: null, tokenType: 'Bearer', userId: null, tenantId: null, tenantName: null, tenantShortId: null, roles: [] });
         }
       } finally {
         if (active) {

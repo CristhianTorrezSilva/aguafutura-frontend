@@ -17,6 +17,8 @@ export const analyticsApi = {
 export const zonesApi = {
   list: () => api.get('/api/v1/zones'),
   create: (payload) => api.post('/api/v1/zones', payload),
+  update: (zoneId, payload) => api.patch(`/api/v1/zones/${zoneId}`, payload),
+  remove: (zoneId) => api.delete(`/api/v1/zones/${zoneId}`),
 };
 
 export const assetsApi = {

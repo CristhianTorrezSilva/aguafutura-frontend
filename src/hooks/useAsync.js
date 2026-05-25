@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { apiErrorMessage } from '../utils/errors';
 
 export function useAsync(asyncFn, deps = []) {
   const [data, setData] = useState(null);
@@ -13,7 +14,7 @@ export function useAsync(asyncFn, deps = []) {
       setData(response.data);
       return response.data;
     } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Error inesperado');
+      setError(apiErrorMessage(err, 'Error inesperado'));
       throw err;
     } finally {
       setLoading(false);

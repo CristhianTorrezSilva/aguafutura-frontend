@@ -1,24 +1,48 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { evidenceApi } from '../api/services';
 import { PERMISSIONS } from '../auth/permissions';
 import { useRoles } from '../hooks/useRoles';
+import { normalizeApiError } from '../utils/errors';
 import { asArray, formatDate, valueOrDash } from '../utils/format';
 import DataTable from './DataTable';
 import EmptyState from './EmptyState';
 import ErrorState from './ErrorState';
 import FormField from './FormField';
 import LoadingState from './LoadingState';
+import ShortId from './ShortId';
 
-export default function EvidencePanel({ referenceType, referenceId }) {
+const referenceTypeLabels = {
+  ASSET: 'Activo hidrico',
+  INCIDENT: 'Incidencia',
+  WORK_ORDER: 'Orden de trabajo',
+};
+
+export default function EvidencePanel({ referenceType, referenceId, referenceLabel }) {
   const { can } = useRoles();
   const canUpload = can(PERMISSIONS.evidenceCreate);
   const [file, setFile] = useState(null);
+  const [description, setDescription] = useState('');
   const [rows, setRows] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const previewUrl = useMemo(() => (file ? URL.createObjectURL(file) : ''), [file]);
+
+  useEffect(() => () => {
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+  }, [previewUrl]);
+
+  useEffect(() => {
+    setRows([]);
+    setLoaded(false);
+    setError('');
+    loadEvidence();
+    // loadEvidence is intentionally kept local to preserve the existing reload flow.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [referenceType, referenceId]);
 
   async function loadEvidence() {
     if (!referenceType || !referenceId) return;
@@ -29,7 +53,7 @@ export default function EvidencePanel({ referenceType, referenceId }) {
       setRows(asArray(response.data));
       setLoaded(true);
     } catch (err) {
-      setError(err.response?.data?.message || err.message || 'No se pudo cargar evidencia');
+      setError(normalizeApiError(err, 'No se pudo cargar evidencia.'));
     } finally {
       setLoading(false);
     }
@@ -45,11 +69,15 @@ export default function EvidencePanel({ referenceType, referenceId }) {
       formData.append('referenceType', referenceType);
       formData.append('referenceId', referenceId);
       formData.append('file', file);
+      if (description.trim()) {
+        formData.append('description', description.trim());
+      }
       await evidenceApi.upload(formData);
       setFile(null);
+      setDescription('');
       await loadEvidence();
     } catch (err) {
-      setError(err.response?.data?.message || err.message || 'No se pudo subir evidencia');
+      setError(normalizeApiError(err, 'No se pudo subir evidencia.'));
     } finally {
       setSaving(false);
     }
@@ -57,7 +85,7 @@ export default function EvidencePanel({ referenceType, referenceId }) {
 
   async function downloadEvidence(row) {
     if (!row.url) {
-      setError('La evidencia no tiene URL de descarga devuelta por backend');
+      setError({ message: 'La evidencia no tiene URL de descarga devuelta por backend.' });
       return;
     }
 
@@ -72,32 +100,35 @@ export default function EvidencePanel({ referenceType, referenceId }) {
       link.remove();
       window.URL.revokeObjectURL(blobUrl);
     } catch (err) {
-      setError(err.response?.data?.message || err.message || 'No se pudo descargar evidencia');
+      setError(normalizeApiError(err, 'No se pudo descargar evidencia.'));
     }
   }
 
   return (
     <div className="panel">
-      <h2 className="section-title">Evidencia {referenceType}</h2>
-      {error && <ErrorState message={error} />}
+      <h2 className="section-title">Evidencia</h2>
+      {error && <ErrorState {...(typeof error === 'string' ? { message: error } : error)} />}
 
       {canUpload && (
         <form onSubmit={uploadEvidence}>
           <div className="form-grid">
-            <FormField label="referenceType">
-              <input value={referenceType} readOnly />
+            <FormField label="Tipo de referencia">
+              <input value={referenceTypeLabels[referenceType] || referenceType} readOnly />
             </FormField>
-            <FormField label="referenceId">
-              <input value={referenceId || ''} readOnly />
+            <FormField label="Elemento relacionado" help="El ID se usa internamente; no necesitas copiarlo.">
+              <input value={referenceLabel || ''} readOnly />
             </FormField>
-            <FormField label="file">
-              <input type="file" accept="image/*" onChange={(event) => setFile(event.target.files?.[0] || null)} />
+            <FormField label="Archivo">
+              <input type="file" onChange={(event) => setFile(event.target.files?.[0] || null)} />
+            </FormField>
+            <FormField label="Descripcion opcional">
+              <input value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Detalle breve del archivo adjunto" />
             </FormField>
           </div>
           {previewUrl && <div className="actions"><img className="preview" src={previewUrl} alt="Preview evidencia" /></div>}
           <div className="actions">
             <button className="button" type="submit" disabled={saving || !file || !referenceId}>
-              {saving ? 'Subiendo...' : 'Subir imagen'}
+              {saving ? 'Subiendo evidencia...' : 'Subir evidencia'}
             </button>
           </div>
         </form>
@@ -115,13 +146,13 @@ export default function EvidencePanel({ referenceType, referenceId }) {
         <DataTable
           rows={rows}
           columns={[
-            { key: 'id', header: 'id', render: (row) => valueOrDash(row.id || row.evidenceId) },
-            { key: 'referenceType', header: 'referenceType' },
-            { key: 'referenceId', header: 'referenceId' },
-            { key: 'fileName', header: 'fileName', render: (row) => valueOrDash(row.fileName || row.filename) },
-            { key: 'url', header: 'url' },
-            { key: 'createdAt', header: 'createdAt', render: (row) => formatDate(row.createdAt) },
-            { key: 'download', header: 'download', render: (row) => <button className="button secondary" type="button" onClick={() => downloadEvidence(row)}>Descargar</button> },
+            { key: 'id', header: 'ID', render: (row) => <ShortId value={row.id || row.evidenceId} />, searchable: false },
+            { key: 'referenceType', header: 'Tipo', render: (row) => referenceTypeLabels[row.referenceType] || valueOrDash(row.referenceType) },
+            { key: 'referenceId', header: 'Referencia', render: (row) => referenceLabel || <ShortId value={row.referenceId} /> },
+            { key: 'fileName', header: 'Archivo', render: (row) => valueOrDash(row.fileName || row.filename) },
+            { key: 'description', header: 'Descripcion', render: (row) => valueOrDash(row.description) },
+            { key: 'createdAt', header: 'Creacion', render: (row) => formatDate(row.createdAt) },
+            { key: 'download', header: 'Accion', render: (row) => <button className="button secondary" type="button" onClick={() => downloadEvidence(row)}>Descargar</button>, searchable: false },
           ]}
         />
       )}

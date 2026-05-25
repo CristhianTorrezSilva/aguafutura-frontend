@@ -4,6 +4,8 @@ import FormField from '../components/FormField';
 import PageHeader from '../components/PageHeader';
 import StatusBadge from '../components/StatusBadge';
 import { useAsync } from '../hooks/useAsync';
+import { apiErrorMessage } from '../utils/errors';
+import { assetLabel, incidentLabel } from '../utils/display';
 import { asArray, valueOrDash } from '../utils/format';
 
 export default function AiSuggestionsPage() {
@@ -25,7 +27,7 @@ export default function AiSuggestionsPage() {
         : await aiApi.incidentSuggestions(incidentId);
       setResult(response.data);
     } catch (err) {
-      setError(err.response?.data?.message || err.message || 'No se pudo obtener sugerencia AI');
+      setError(apiErrorMessage(err, 'No se pudo obtener sugerencia AI'));
     } finally {
       setLoading(false);
     }
@@ -38,7 +40,7 @@ export default function AiSuggestionsPage() {
       const response = await aiApi.analyzeAsset(assetId);
       setAnalysis(response.data);
     } catch (err) {
-      setError(err.response?.data?.message || err.message || 'No se pudo analizar activo');
+      setError(apiErrorMessage(err, 'No se pudo analizar activo'));
     } finally {
       setLoading(false);
     }
@@ -46,38 +48,38 @@ export default function AiSuggestionsPage() {
 
   return (
     <div className="page">
-      <PageHeader title="AI Suggestions" description="Sugerencias reales desde el backend." />
+      <PageHeader eyebrow="Inteligencia operacional" title="Asistente IA" description="Sugerencias y analisis generados por el backend para apoyar decisiones operativas." />
       {error && <div className="error">{error}</div>}
       <div className="grid">
         <div className="panel">
           <h2 className="section-title">Por activo</h2>
-          <FormField label="assetId">
+          <FormField label="Activo">
             <select value={assetId} onChange={(event) => setAssetId(event.target.value)}>
               <option value="">Seleccionar activo</option>
-              {asArray(assets.data).map((asset) => <option key={asset.id} value={asset.id}>{asset.name} ({asset.code})</option>)}
+              {asArray(assets.data).map((asset) => <option key={asset.id} value={asset.id}>{assetLabel(asset)}</option>)}
             </select>
           </FormField>
           <div className="actions">
             <button className="button" type="button" disabled={!assetId || loading} onClick={() => fetchSuggestion('asset')}>
-              Consultar activo
+              Sugerir por activo
             </button>
             <button className="button secondary" type="button" disabled={!assetId || loading} onClick={fetchAnalysis}>
-              Analyze activo
+              Analizar activo
             </button>
           </div>
         </div>
 
         <div className="panel">
           <h2 className="section-title">Por incidente</h2>
-          <FormField label="incidentId">
+          <FormField label="Incidencia">
             <select value={incidentId} onChange={(event) => setIncidentId(event.target.value)}>
               <option value="">Seleccionar incidente</option>
-              {asArray(incidents.data).map((incident) => <option key={incident.id} value={incident.id}>{incident.title}</option>)}
+              {asArray(incidents.data).map((incident) => <option key={incident.id} value={incident.id}>{incidentLabel(incident)}</option>)}
             </select>
           </FormField>
           <div className="actions">
             <button className="button" type="button" disabled={!incidentId || loading} onClick={() => fetchSuggestion('incident')}>
-              Consultar incidente
+              Sugerir por incidencia
             </button>
           </div>
         </div>
@@ -85,25 +87,31 @@ export default function AiSuggestionsPage() {
 
       {result && (
         <div className="panel">
-          <h2 className="section-title">Resultado</h2>
-          <dl className="detail-list">
-            <div><dt>severitySuggestion</dt><dd><StatusBadge value={result.severitySuggestion} /></dd></div>
-            <div><dt>prioritySuggestion</dt><dd><StatusBadge value={result.prioritySuggestion} /></dd></div>
-            <div><dt>aiUsed</dt><dd>{valueOrDash(result.aiUsed)}</dd></div>
-            <div><dt>fallbackUsed</dt><dd>{valueOrDash(result.fallbackUsed)}</dd></div>
-            <div><dt>explanation</dt><dd>{valueOrDash(result.explanation)}</dd></div>
-          </dl>
+          <h2 className="section-title">Resultado operativo</h2>
+          <div className="ai-result">
+            <div className="actions">
+              <StatusBadge value={result.aiUsed ? 'IA activa' : 'IA no usada'} />
+              <StatusBadge value={result.fallbackUsed ? 'Fallback deterministico' : 'Sin fallback'} />
+            </div>
+            <dl className="detail-list">
+              <div><dt>Severidad sugerida</dt><dd><StatusBadge value={result.severitySuggestion} /></dd></div>
+              <div><dt>Prioridad sugerida</dt><dd><StatusBadge value={result.prioritySuggestion} /></dd></div>
+            </dl>
+            <p className="ai-copy">{valueOrDash(result.explanation)}</p>
+          </div>
         </div>
       )}
 
       {analysis && (
         <div className="panel">
-          <h2 className="section-title">Analyze asset</h2>
-          <dl className="detail-list">
-            <div><dt>isAnomaly</dt><dd>{valueOrDash(analysis.isAnomaly)}</dd></div>
-            <div><dt>analysis</dt><dd>{valueOrDash(analysis.analysis)}</dd></div>
-            <div><dt>recommendation</dt><dd>{valueOrDash(analysis.recommendation)}</dd></div>
-          </dl>
+          <h2 className="section-title">Analisis del activo</h2>
+          <div className="ai-result">
+            <dl className="detail-list">
+              <div><dt>Anomalia</dt><dd>{valueOrDash(analysis.isAnomaly)}</dd></div>
+            </dl>
+            <p className="ai-copy">{valueOrDash(analysis.analysis)}</p>
+            <p className="ai-copy">{valueOrDash(analysis.recommendation)}</p>
+          </div>
         </div>
       )}
     </div>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { aiApi } from '../api/services';
+import { apiErrorMessage } from '../utils/errors';
 import { valueOrDash } from '../utils/format';
 import StatusBadge from './StatusBadge';
 
@@ -16,7 +17,7 @@ export default function AiSuggestionPanel({ assetId, incidentId }) {
       const response = await aiApi.assetSuggestions(assetId);
       setSuggestion(response.data);
     } catch (err) {
-      setError(err.response?.data?.message || err.message || 'No se pudo obtener sugerencia de activo');
+      setError(apiErrorMessage(err, 'No se pudo obtener sugerencia de activo'));
     } finally {
       setLoading('');
     }
@@ -29,7 +30,7 @@ export default function AiSuggestionPanel({ assetId, incidentId }) {
       const response = await aiApi.incidentSuggestions(incidentId);
       setSuggestion(response.data);
     } catch (err) {
-      setError(err.response?.data?.message || err.message || 'No se pudo obtener sugerencia de incidente');
+      setError(apiErrorMessage(err, 'No se pudo obtener sugerencia de incidente'));
     } finally {
       setLoading('');
     }
@@ -42,7 +43,7 @@ export default function AiSuggestionPanel({ assetId, incidentId }) {
       const response = await aiApi.analyzeAsset(assetId);
       setAnalysis(response.data);
     } catch (err) {
-      setError(err.response?.data?.message || err.message || 'No se pudo analizar activo');
+      setError(apiErrorMessage(err, 'No se pudo analizar activo'));
     } finally {
       setLoading('');
     }
@@ -50,42 +51,48 @@ export default function AiSuggestionPanel({ assetId, incidentId }) {
 
   return (
     <div className="panel">
-      <h2 className="section-title">AI</h2>
+      <h2 className="section-title">Asistente operativo IA</h2>
       {error && <div className="error">{error}</div>}
       <div className="actions">
         {assetId && (
           <>
             <button className="button secondary" type="button" onClick={loadAssetSuggestion} disabled={Boolean(loading)}>
-              {loading === 'assetSuggestion' ? 'Consultando...' : 'Suggestion activo'}
+              {loading === 'assetSuggestion' ? 'Consultando...' : 'Sugerir por activo'}
             </button>
             <button className="button secondary" type="button" onClick={loadAssetAnalysis} disabled={Boolean(loading)}>
-              {loading === 'assetAnalysis' ? 'Analizando...' : 'Analyze activo'}
+              {loading === 'assetAnalysis' ? 'Analizando...' : 'Analizar activo'}
             </button>
           </>
         )}
         {incidentId && (
           <button className="button secondary" type="button" onClick={loadIncidentSuggestion} disabled={Boolean(loading)}>
-            {loading === 'incidentSuggestion' ? 'Consultando...' : 'Suggestion incidente'}
+            {loading === 'incidentSuggestion' ? 'Consultando...' : 'Sugerir por incidencia'}
           </button>
         )}
       </div>
 
       {suggestion && (
-        <dl className="detail-list">
-          <div><dt>severitySuggestion</dt><dd><StatusBadge value={suggestion.severitySuggestion} /></dd></div>
-          <div><dt>prioritySuggestion</dt><dd><StatusBadge value={suggestion.prioritySuggestion} /></dd></div>
-          <div><dt>aiUsed</dt><dd>{valueOrDash(suggestion.aiUsed)}</dd></div>
-          <div><dt>fallbackUsed</dt><dd>{valueOrDash(suggestion.fallbackUsed)}</dd></div>
-          <div><dt>explanation</dt><dd>{valueOrDash(suggestion.explanation)}</dd></div>
-        </dl>
+        <div className="ai-result">
+          <div className="actions">
+            <StatusBadge value={suggestion.aiUsed ? 'IA activa' : 'IA no usada'} />
+            <StatusBadge value={suggestion.fallbackUsed ? 'Fallback deterministico' : 'Sin fallback'} />
+          </div>
+          <dl className="detail-list">
+            <div><dt>Severidad sugerida</dt><dd><StatusBadge value={suggestion.severitySuggestion} /></dd></div>
+            <div><dt>Prioridad sugerida</dt><dd><StatusBadge value={suggestion.prioritySuggestion} /></dd></div>
+          </dl>
+          <p className="ai-copy">{valueOrDash(suggestion.explanation)}</p>
+        </div>
       )}
 
       {analysis && (
-        <dl className="detail-list">
-          <div><dt>isAnomaly</dt><dd>{valueOrDash(analysis.isAnomaly)}</dd></div>
-          <div><dt>analysis</dt><dd>{valueOrDash(analysis.analysis)}</dd></div>
-          <div><dt>recommendation</dt><dd>{valueOrDash(analysis.recommendation)}</dd></div>
-        </dl>
+        <div className="ai-result">
+          <dl className="detail-list">
+            <div><dt>Anomalia</dt><dd>{valueOrDash(analysis.isAnomaly)}</dd></div>
+          </dl>
+          <p className="ai-copy">{valueOrDash(analysis.analysis)}</p>
+          <p className="ai-copy">{valueOrDash(analysis.recommendation)}</p>
+        </div>
       )}
     </div>
   );
