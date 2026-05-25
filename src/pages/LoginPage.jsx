@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { tenantsApi } from '../api/services';
 import { useAuth } from '../auth/AuthContext';
 import FormField from '../components/FormField';
@@ -7,9 +7,10 @@ import ErrorState from '../components/ErrorState';
 import { asArray } from '../utils/format';
 import { apiErrorMessage } from '../utils/errors';
 import { REGISTER_ROLES } from '../utils/enums';
+import { defaultPathForRoles } from '../auth/permissions';
 
 export default function LoginPage() {
-  const { login, register, isAuthenticated } = useAuth();
+  const { login, register, isAuthenticated, roles } = useAuth();
   const [tenants, setTenants] = useState([]);
   const [mode, setMode] = useState('login');
   const [form, setForm] = useState({
@@ -23,7 +24,6 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [tenantsError, setTenantsError] = useState('');
   const navigate = useNavigate();
-  const location = useLocation();
 
   useEffect(() => {
     tenantsApi
@@ -39,7 +39,7 @@ export default function LoginPage() {
   }, []);
 
   if (isAuthenticated) {
-    return <Navigate to="/" replace />;
+    return <Navigate to={defaultPathForRoles(roles)} replace />;
   }
 
   async function handleSubmit(event) {
@@ -47,12 +47,13 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
     try {
+      let profile;
       if (mode === 'login') {
-        await login({ tenantId: form.tenantId, email: form.email, password: form.password });
+        profile = await login({ tenantId: form.tenantId, email: form.email, password: form.password });
       } else {
-        await register(form);
+        profile = await register(form);
       }
-      navigate(location.state?.from?.pathname || '/', { replace: true });
+      navigate(defaultPathForRoles(profile?.roles), { replace: true });
     } catch (err) {
       setError(apiErrorMessage(err, 'Login fallido'));
     } finally {

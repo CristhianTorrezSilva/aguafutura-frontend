@@ -86,7 +86,7 @@ export function AuthProvider({ children }) {
       });
 
       setAuth(readStoredAuth());
-      await loadProfile();
+      return loadProfile();
     },
     [loadProfile]
   );
@@ -113,7 +113,7 @@ export function AuthProvider({ children }) {
       });
 
       setAuth(readStoredAuth());
-      await loadProfile();
+      return loadProfile();
     },
     [loadProfile]
   );

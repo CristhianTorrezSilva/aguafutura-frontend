@@ -15,7 +15,15 @@ import { assetLabel, incidentLabel, workOrderLabel } from '../utils/display';
 import { asArray, formatDate } from '../utils/format';
 import { WORK_ORDER_PRIORITIES, WORK_ORDER_STATUSES } from '../utils/enums';
 
-const emptyWorkOrderForm = { assetId: '', incidentId: '', description: '', priority: 'HIGH', status: 'PENDING' };
+const emptyWorkOrderForm = {
+  assetId: '',
+  incidentId: '',
+  description: '',
+  priority: 'HIGH',
+  status: 'PENDING',
+  assignedTo: '',
+  scheduledAt: '',
+};
 
 function validateWorkOrder(form, assets, incidents) {
   if (!form.assetId) return 'Selecciona un activo real.';
@@ -39,6 +47,23 @@ function buildWorkOrderPayload(form, includeStatus = false) {
   return payload;
 }
 
+function validateWorkOrderUpdate(form) {
+  if (!form.description.trim()) return 'Ingresa una descripcion.';
+  if (!WORK_ORDER_PRIORITIES.includes(form.priority)) return 'Selecciona una prioridad valida.';
+  if (!WORK_ORDER_STATUSES.includes(form.status)) return 'Selecciona un estado valido.';
+  return '';
+}
+
+function buildWorkOrderUpdatePayload(form) {
+  return {
+    description: form.description.trim(),
+    priority: form.priority,
+    status: form.status,
+    assignedTo: form.assignedTo.trim(),
+    scheduledAt: form.scheduledAt || null,
+  };
+}
+
 function workOrderToForm(workOrder) {
   return {
     assetId: workOrder.assetId || '',
@@ -46,6 +71,8 @@ function workOrderToForm(workOrder) {
     description: workOrder.description || '',
     priority: workOrder.priority || 'HIGH',
     status: workOrder.status || 'PENDING',
+    assignedTo: workOrder.assignedTo || '',
+    scheduledAt: workOrder.scheduledAt ? String(workOrder.scheduledAt).slice(0, 16) : '',
   };
 }
 
@@ -102,7 +129,7 @@ export default function WorkOrdersPage() {
 
   async function handleEdit(event) {
     event.preventDefault();
-    const validationError = validateWorkOrder(editForm, assetRows, incidentRows);
+    const validationError = validateWorkOrderUpdate(editForm);
     if (validationError) {
       setEditError({ message: validationError });
       return;
@@ -111,7 +138,7 @@ export default function WorkOrdersPage() {
     setSaving(true);
     setEditError(null);
     try {
-      await workOrdersApi.update(editingWorkOrder.id, buildWorkOrderPayload(editForm, true));
+      await workOrdersApi.update(editingWorkOrder.id, buildWorkOrderUpdatePayload(editForm));
       setEditingWorkOrder(null);
       await workOrders.reload();
     } catch (err) {
@@ -172,6 +199,7 @@ export default function WorkOrdersPage() {
         <DataTable
           rows={asArray(workOrders.data)}
           columns={[
+            { key: 'displayName', header: 'Orden', render: (row) => row.displayName || workOrderLabel(row) },
             { key: 'id', header: 'ID', render: (row) => <ShortId value={row.id} />, searchable: false },
             { key: 'assetId', header: 'Activo', render: (row) => row.assetName || row.assetCode ? [row.assetCode, row.assetName].filter(Boolean).join(' · ') : assetLabel(assetsById.get(row.assetId)) },
             { key: 'incidentId', header: 'Incidencia', render: (row) => row.incidentTitle || incidentLabel(incidentsById.get(row.incidentId)) },
@@ -197,7 +225,15 @@ export default function WorkOrdersPage() {
           ]}
         />
       )}
-      {selectedWorkOrderId && <EvidencePanel referenceType="WORK_ORDER" referenceId={selectedWorkOrderId} referenceLabel={workOrderLabel(selectedWorkOrder)} />}
+      {selectedWorkOrderId && (
+        <EvidencePanel
+          referenceType="WORK_ORDER"
+          referenceId={selectedWorkOrderId}
+          referenceLabel={workOrderLabel(selectedWorkOrder)}
+          title="Evidencia de ejecucion/cierre"
+          helperText="Usa esta evidencia para documentar el trabajo realizado, avance o cierre tecnico."
+        />
+      )}
       {editingWorkOrder && (
         <div className="modal-backdrop" role="presentation">
           <div className="modal-panel" role="dialog" aria-modal="true" aria-label="Editar orden">
@@ -205,18 +241,6 @@ export default function WorkOrdersPage() {
               <h2 className="section-title">Editar orden</h2>
               {editError && <ErrorState {...editError} />}
               <div className="form-grid">
-                <FormField label="Activo">
-                  <select value={editForm.assetId} onChange={(event) => setEditForm({ ...editForm, assetId: event.target.value })} required>
-                    <option value="">Seleccionar activo</option>
-                    {assetRows.map((asset) => <option key={asset.id} value={asset.id}>{assetLabel(asset)}</option>)}
-                  </select>
-                </FormField>
-                <FormField label="Incidencia">
-                  <select value={editForm.incidentId} onChange={(event) => setEditForm({ ...editForm, incidentId: event.target.value })} required>
-                    <option value="">Seleccionar incidente</option>
-                    {incidentRows.map((incident) => <option key={incident.id} value={incident.id}>{incidentLabel(incident)}</option>)}
-                  </select>
-                </FormField>
                 <FormField label="Prioridad">
                   <select value={editForm.priority} onChange={(event) => setEditForm({ ...editForm, priority: event.target.value })}>
                     {WORK_ORDER_PRIORITIES.map((priority) => <option key={priority} value={priority}>{priority}</option>)}
@@ -226,6 +250,12 @@ export default function WorkOrdersPage() {
                   <select value={editForm.status} onChange={(event) => setEditForm({ ...editForm, status: event.target.value })}>
                     {WORK_ORDER_STATUSES.map((status) => <option key={status} value={status}>{status}</option>)}
                   </select>
+                </FormField>
+                <FormField label="Asignado a">
+                  <input value={editForm.assignedTo} onChange={(event) => setEditForm({ ...editForm, assignedTo: event.target.value })} placeholder="tecnico.norte" />
+                </FormField>
+                <FormField label="Programada">
+                  <input type="datetime-local" value={editForm.scheduledAt} onChange={(event) => setEditForm({ ...editForm, scheduledAt: event.target.value })} />
                 </FormField>
                 <FormField label="Descripcion">
                   <textarea value={editForm.description} onChange={(event) => setEditForm({ ...editForm, description: event.target.value })} required />

@@ -14,6 +14,21 @@ const referenceTypes = [
   { value: 'WORK_ORDER', label: 'Orden de trabajo' },
 ];
 
+const evidenceContext = {
+  ASSET: {
+    title: 'Evidencia del activo',
+    helperText: 'Usa esta evidencia para documentar estado, ubicacion o inspecciones del activo.',
+  },
+  INCIDENT: {
+    title: 'Evidencia del incidente',
+    helperText: 'Usa esta evidencia para documentar el problema inicial reportado.',
+  },
+  WORK_ORDER: {
+    title: 'Evidencia de ejecucion/cierre',
+    helperText: 'Usa esta evidencia para documentar el trabajo realizado, avance o cierre tecnico.',
+  },
+};
+
 function labelFor(item) {
   return item?.displayName || item?.label || item?.name || item?.title || item?.code || item?.id || '-';
 }
@@ -110,6 +125,8 @@ export default function EvidencePage() {
           referenceType={reference.referenceType}
           referenceId={reference.referenceId}
           referenceLabel={labelFor(selectedOption)}
+          title={evidenceContext[reference.referenceType]?.title}
+          helperText={evidenceContext[reference.referenceType]?.helperText}
         />
       )}
     </div>

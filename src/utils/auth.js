@@ -19,5 +19,5 @@ export function normalizeRoles(value) {
 }
 
 export function normalizeRole(role) {
-  return String(role || '').trim().replace(/^ROLE_/, '');
+  return String(role || '').trim().replace(/^ROLE_/, '').toUpperCase();
 }

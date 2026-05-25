@@ -194,7 +194,12 @@ export default function AssetDetailPage() {
         </div>
       )}
       {canUseAi && <AiSuggestionPanel assetId={assetId} />}
-      <EvidencePanel referenceType="ASSET" referenceId={assetId} referenceLabel={assetLabel(asset)} />
+      <EvidencePanel
+        referenceType="ASSET"
+        referenceId={assetId}
+        referenceLabel={assetLabel(asset)}
+        title="Evidencia del activo"
+      />
     </div>
   );
 }

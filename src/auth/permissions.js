@@ -7,24 +7,24 @@ export const ROLES = {
 
 export const PERMISSIONS = {
   dashboardRead: [ROLES.ADMIN, ROLES.COORDINATOR, ROLES.AUDITOR],
-  zonesRead: [ROLES.ADMIN, ROLES.COORDINATOR, ROLES.AUDITOR],
+  zonesRead: [ROLES.ADMIN, ROLES.COORDINATOR, ROLES.TECHNICIAN, ROLES.AUDITOR],
   zonesCreate: [ROLES.ADMIN, ROLES.COORDINATOR],
   zonesUpdate: [ROLES.ADMIN, ROLES.COORDINATOR],
   zonesDelete: [ROLES.ADMIN, ROLES.COORDINATOR],
-  assetsRead: [ROLES.ADMIN, ROLES.COORDINATOR, ROLES.AUDITOR],
+  assetsRead: [ROLES.ADMIN, ROLES.COORDINATOR, ROLES.TECHNICIAN, ROLES.AUDITOR],
   assetsCreate: [ROLES.ADMIN, ROLES.COORDINATOR],
   assetsUpdate: [ROLES.ADMIN, ROLES.COORDINATOR],
   assetsDelete: [ROLES.ADMIN, ROLES.COORDINATOR],
   consumptionsRead: [ROLES.ADMIN, ROLES.COORDINATOR, ROLES.AUDITOR],
   consumptionsCreate: [ROLES.ADMIN, ROLES.COORDINATOR],
   consumptionsUpdate: [ROLES.ADMIN, ROLES.COORDINATOR],
-  incidentsRead: [ROLES.ADMIN, ROLES.COORDINATOR, ROLES.AUDITOR],
+  incidentsRead: [ROLES.ADMIN, ROLES.COORDINATOR, ROLES.TECHNICIAN, ROLES.AUDITOR],
   incidentsCreate: [ROLES.ADMIN, ROLES.COORDINATOR],
   incidentsUpdate: [ROLES.ADMIN, ROLES.COORDINATOR],
   incidentsDelete: [ROLES.ADMIN, ROLES.COORDINATOR],
   workOrdersRead: [ROLES.ADMIN, ROLES.COORDINATOR, ROLES.TECHNICIAN, ROLES.AUDITOR],
   workOrdersCreate: [ROLES.ADMIN, ROLES.COORDINATOR],
-  workOrdersUpdate: [ROLES.ADMIN, ROLES.COORDINATOR],
+  workOrdersUpdate: [ROLES.ADMIN, ROLES.COORDINATOR, ROLES.TECHNICIAN],
   workOrdersDelete: [ROLES.ADMIN, ROLES.COORDINATOR],
   evidenceRead: [ROLES.ADMIN, ROLES.COORDINATOR, ROLES.TECHNICIAN, ROLES.AUDITOR],
   evidenceCreate: [ROLES.ADMIN, ROLES.COORDINATOR, ROLES.TECHNICIAN],
@@ -37,4 +37,18 @@ export function hasAnyRole(userRoles, allowedRoles) {
   }
 
   return userRoles.some((role) => allowedRoles.includes(role));
+}
+
+export function defaultPathForRoles(userRoles) {
+  const roles = (userRoles || []).map((role) => String(role || '').trim().replace(/^ROLE_/, '').toUpperCase());
+
+  if (hasAnyRole(roles, [ROLES.ADMIN, ROLES.COORDINATOR, ROLES.AUDITOR])) {
+    return '/dashboard';
+  }
+
+  if (hasAnyRole(roles, [ROLES.TECHNICIAN])) {
+    return '/work-orders';
+  }
+
+  return '/forbidden';
 }

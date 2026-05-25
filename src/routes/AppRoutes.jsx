@@ -13,6 +13,7 @@ import IncidentsPage from '../pages/IncidentsPage';
 import LoginPage from '../pages/LoginPage';
 import NotFoundPage from '../pages/NotFoundPage';
 import ProfilePage from '../pages/ProfilePage';
+import RoleLanding from './RoleLanding';
 import WorkOrdersPage from '../pages/WorkOrdersPage';
 import ZonesPage from '../pages/ZonesPage';
 
@@ -23,7 +24,8 @@ export default function AppRoutes() {
       <Route path="/forbidden" element={<ForbiddenPage />} />
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
-          <Route index element={<RoleGuard allowedRoles={PERMISSIONS.dashboardRead}><DashboardPage /></RoleGuard>} />
+          <Route index element={<RoleLanding />} />
+          <Route path="dashboard" element={<RoleGuard allowedRoles={PERMISSIONS.dashboardRead}><DashboardPage /></RoleGuard>} />
           <Route path="zones" element={<RoleGuard allowedRoles={PERMISSIONS.zonesRead}><ZonesPage /></RoleGuard>} />
           <Route path="assets" element={<RoleGuard allowedRoles={PERMISSIONS.assetsRead}><AssetsPage /></RoleGuard>} />
           <Route path="assets/:assetId" element={<RoleGuard allowedRoles={PERMISSIONS.assetsRead}><AssetDetailPage /></RoleGuard>} />

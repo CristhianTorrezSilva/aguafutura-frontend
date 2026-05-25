@@ -191,7 +191,13 @@ export default function IncidentsPage() {
       {selectedIncidentId && (
         <>
           {canUseAi && <AiSuggestionPanel incidentId={selectedIncidentId} />}
-          <EvidencePanel referenceType="INCIDENT" referenceId={selectedIncidentId} referenceLabel={incidentLabel(selectedIncident)} />
+          <EvidencePanel
+            referenceType="INCIDENT"
+            referenceId={selectedIncidentId}
+            referenceLabel={incidentLabel(selectedIncident)}
+            title="Evidencia del incidente"
+            helperText="Usa esta evidencia para documentar el problema inicial reportado."
+          />
         </>
       )}
       {editingIncident && (

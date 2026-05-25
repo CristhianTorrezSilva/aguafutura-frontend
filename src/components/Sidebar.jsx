@@ -5,7 +5,7 @@ import { useRoles } from '../hooks/useRoles';
 import { tenantLabel } from '../utils/display';
 
 const navItems = [
-  { to: '/', label: 'Centro operativo', roles: PERMISSIONS.dashboardRead },
+  { to: '/dashboard', label: 'Centro operativo', roles: PERMISSIONS.dashboardRead },
   { to: '/zones', label: 'Zonas', roles: PERMISSIONS.zonesRead },
   { to: '/assets', label: 'Activos hidricos', roles: PERMISSIONS.assetsRead },
   { to: '/incidents', label: 'Incidencias', roles: PERMISSIONS.incidentsRead },

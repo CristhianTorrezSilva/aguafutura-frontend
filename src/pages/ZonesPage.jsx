@@ -61,6 +61,8 @@ function zoneToForm(zone) {
 }
 
 function ZoneForm({ title, form, setForm, error, saving, submitLabel, savingLabel, onSubmit, onCancel, originalZone }) {
+  const showDescription = Boolean(originalZone);
+
   return (
     <form className="panel" onSubmit={onSubmit}>
       <h2 className="section-title">{title}</h2>
@@ -86,13 +88,15 @@ function ZoneForm({ title, form, setForm, error, saving, submitLabel, savingLabe
             required
           />
         </FormField>
-        <FormField label="Descripcion">
-          <input
-            value={form.description}
-            onChange={(event) => setForm({ ...form, description: event.target.value })}
-            placeholder="Sector operativo, cobertura o referencia"
-          />
-        </FormField>
+        {showDescription && (
+          <FormField label="Descripcion">
+            <input
+              value={form.description}
+              onChange={(event) => setForm({ ...form, description: event.target.value })}
+              placeholder="Sector operativo, cobertura o referencia"
+            />
+          </FormField>
+        )}
         {(originalZone?.enabled !== undefined || originalZone?.active !== undefined) && (
           <FormField label="Estado activo">
             <select value={String(form.enabled)} onChange={(event) => setForm({ ...form, enabled: event.target.value === 'true' })}>
