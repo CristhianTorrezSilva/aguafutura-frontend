@@ -17,6 +17,10 @@ const referenceTypeLabels = {
   WORK_ORDER: 'Orden de trabajo',
 };
 
+function isUuid(value) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || ''));
+}
+
 export default function EvidencePanel({ referenceType, referenceId, referenceLabel }) {
   const { can } = useRoles();
   const canUpload = can(PERMISSIONS.evidenceCreate);
@@ -27,6 +31,7 @@ export default function EvidencePanel({ referenceType, referenceId, referenceLab
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
   const previewUrl = useMemo(() => (file ? URL.createObjectURL(file) : ''), [file]);
 
   useEffect(() => () => {
@@ -39,6 +44,7 @@ export default function EvidencePanel({ referenceType, referenceId, referenceLab
     setRows([]);
     setLoaded(false);
     setError('');
+    setNotice('');
     loadEvidence();
     // loadEvidence is intentionally kept local to preserve the existing reload flow.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -62,8 +68,14 @@ export default function EvidencePanel({ referenceType, referenceId, referenceLab
   async function uploadEvidence(event) {
     event.preventDefault();
     if (!file) return;
+    if (!isUuid(referenceId)) {
+      setError({ message: 'Selecciona una referencia valida. El backend requiere un UUID real.' });
+      return;
+    }
+
     setSaving(true);
     setError('');
+    setNotice('');
     try {
       const formData = new FormData();
       formData.append('referenceType', referenceType);
@@ -75,6 +87,7 @@ export default function EvidencePanel({ referenceType, referenceId, referenceLab
       await evidenceApi.upload(formData);
       setFile(null);
       setDescription('');
+      setNotice('Evidencia subida correctamente.');
       await loadEvidence();
     } catch (err) {
       setError(normalizeApiError(err, 'No se pudo subir evidencia.'));
@@ -109,6 +122,7 @@ export default function EvidencePanel({ referenceType, referenceId, referenceLab
     <div className="panel">
       <h2 className="section-title">Evidencia</h2>
       {error && <ErrorState {...(typeof error === 'string' ? { message: error } : error)} />}
+      {notice && <div className="success-message">{notice}</div>}
 
       {canUpload && (
         <form onSubmit={uploadEvidence}>

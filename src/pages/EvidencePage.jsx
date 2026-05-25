@@ -18,6 +18,15 @@ function labelFor(item) {
   return item?.displayName || item?.label || item?.name || item?.title || item?.code || item?.id || '-';
 }
 
+function isUuid(value) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || ''));
+}
+
+function referenceOptionId(item) {
+  const candidates = [item?.id, item?.referenceId, item?.uuid, item?.resourceId, item?.entityId, item?.value];
+  return candidates.find(isUuid) || '';
+}
+
 export default function EvidencePage() {
   const [reference, setReference] = useState({ referenceType: 'ASSET', referenceId: '' });
   const [options, setOptions] = useState([]);
@@ -55,7 +64,7 @@ export default function EvidencePage() {
   }, [reference.referenceType]);
 
   const selectedOption = useMemo(
-    () => options.find((item) => item.id === reference.referenceId),
+    () => options.find((item) => referenceOptionId(item) === reference.referenceId),
     [options, reference.referenceId]
   );
 
@@ -82,7 +91,14 @@ export default function EvidencePage() {
               disabled={loadingOptions}
             >
               <option value="">{loadingOptions ? 'Cargando opciones...' : 'Seleccionar elemento relacionado'}</option>
-              {options.map((item) => <option key={item.id || item.value} value={item.id || item.value}>{labelFor(item)}</option>)}
+              {options.map((item) => {
+                const optionId = referenceOptionId(item);
+                return (
+                  <option key={optionId || labelFor(item)} value={optionId} disabled={!optionId}>
+                    {labelFor(item)}
+                  </option>
+                );
+              })}
             </select>
           </FormField>
         </div>
