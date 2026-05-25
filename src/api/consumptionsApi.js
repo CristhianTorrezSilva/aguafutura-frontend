@@ -1,0 +1,1 @@
+export { consumptionsApi } from './services';

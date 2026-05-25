@@ -1,0 +1,1 @@
+export { incidentsApi } from './services';
